@@ -1,0 +1,13 @@
+FNV Audio Converter 1.0
+
+PASS: Audio conversion regression tests (all presets and failure cases).
+PASS: DDS/normal-map regression tests (all supported formats and mip levels).
+PASS: Security regression tests (CSV, links, atomic writes, spoofed WAV, size/pitch).
+PASS: Python source compilation.
+PASS: Two Windows x64 GUI EXE builds; entry-script strings, imports, manifest, ASLR and DEP inspected.
+PASS: Official Python download matches published SHA-256.
+
+Not executed: Windows EXEs / bundled Windows Python, live Windows GUI, Windows FFmpeg
+installer, or GECK/FNV playback/rendering. Processing tests ran on Linux with matching
+Pillow/NumPy versions. A GUI smoke test was attempted but this environment cannot create
+the display-server sockets. No claim of Windows end-to-end or in-game validation is made.

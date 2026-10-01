@@ -1,0 +1,26 @@
+NATIVE EXE LAUNCHERS
+
+The application source is in ../app. This launcher start the bundled Windows Python
+runtime in isolated mode, using a fixed absolute path. No PowerShell or CMD is used.
+
+Compiled with Zig 0.13.0 (x86_64-windows-gnu), using launcher.c and app.rc:
+
+zig rc /fo app.res app.rc
+zig cc -target x86_64-windows-gnu -O2 -municode launcher.c app.res -o "FNV Audio Converter.exe" -luser32 -Wl,--subsystem,windows -Wl,--dynamicbase -Wl,--nxcompat
+
+The commands above use POSIX shell quoting for the macro; adapt quoting if building in
+CMD or PowerShell. Keep the resulting EXE in the package root beside app and runtime.
+The manifest requests asInvoker, enables DPI awareness, and does not request elevation.
+
+RUNTIME PROVENANCE
+Official CPython 3.13.16 Windows x64 runtime:
+https://www.python.org/ftp/python/3.13.16/python-3.13.16-amd64.zip
+Published index: https://www.python.org/ftp/python/index-windows.json
+Archive SHA256: bbf675bb5e763c1efbb09a3a461b259d81598a63c30c4b0d7ea11b9f063df159
+This hash was verified before extraction. Unused pip, tests, headers, libraries and IDLE
+were omitted. Tk and CPython licenses are preserved in runtime.
+
+Pillow and NumPy are not included or needed by the audio converter.
+
+Compile the app modules to adjacent .pyc files with CPython 3.13 before packaging.
+See build_release.py in the source archive root for the complete local build procedure.

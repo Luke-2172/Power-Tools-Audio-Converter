@@ -1,0 +1,76 @@
+FNV AUDIO CONVERTER 1.0 - CODE REVIEW AND VALIDATION
+
+Scope
+Reviewed the custom Python processing code, desktop interface, dependency installer,
+filesystem handling, CSV reports, and the native Windows EXE launcher. This is a targeted
+code review with regression tests, not a formal penetration test or a guarantee that all
+third-party libraries are vulnerability-free.
+
+Findings addressed
+1. Spreadsheet formula injection in reports.
+   Earlier reports wrote user-controlled filenames and error text directly to CSV.
+   Values beginning with spreadsheet formula/control prefixes are now escaped. The
+   View report button opens plain text in Notepad instead of launching a spreadsheet.
+2. Partial final files after interruption.
+   Earlier final output copies could leave a partially written filename on process exit.
+   Outputs now publish atomically after processing, with no replacement of an existing
+   output. Other writes use flushed temporary files in the same directory. Interrupted
+   work may leave a .partial/temp file, never an intentionally published half-file.
+3. Linked-file and directory handling.
+   Added checks for symbolic links and Windows reparse points/junctions across input
+   scans, output ancestors and LIP copies. They are refused. Roots may not overlap.
+   Paths are rechecked before writes. No shell command strings are built from filenames.
+4. Executable search-path exposure.
+   Windows audio tools are no longer silently resolved from PATH/current directory.
+   Only the app's explicit tools folder or a folder selected by the user is used.
+   Native launchers use a fixed absolute bundled pythonw.exe path and isolated Python.
+5. Spoofed audio/network inputs.
+   RIFF/RF64 WAV signatures and chunk boundaries are checked. Encoding explicitly uses
+   the WAV demuxer. FFmpeg/FFprobe input protocols are restricted to local files.
+6. Decoder resource limits.
+   Audio commands have timeouts and file-backed diagnostics instead of unlimited RAM
+   capture. Tool JSON responses are size-limited. WAV inputs above 8 GiB are refused.
+   DDS input files above 384 MiB, dimensions above 8192 per edge, or more than 64 million
+   pixels are refused before pixel decode. DDS pitches and mip payload lengths are checked.
+7. Unsupported textures mixed into output.
+   Cubemaps, unsupported formats and non-power-of-two textures are now REVIEW entries,
+   left in the input folder instead of copied into the supposedly ready output.
+8. Interface/operational bugs.
+   Preview happens without writing output. Settings are disabled during a batch; workers
+   update Tk via an event queue. UI logs are bounded, source/output nesting is rejected,
+   previous completed reports are tracked, and opening output no longer falls back to
+   an empty path/current folder. Scan cancellation is handled as cancellation.
+9. First-run dependency installation.
+   Python, Tk, and texture libraries are bundled. There is no pip/bootstrap installer in
+   the runnable distribution. FFmpeg remains an explicit one-time download or user choice.
+   Its installer checks SHA-256, allows only HTTPS redirects to known provider hosts,
+   bounds download/extraction sizes, and extracts only selected filenames into staging.
+
+Validation performed
+- Audio: all three presets, multiple input sample rates, mono/stereo, PCM16/PCM24/float,
+  Unicode paths, full decode, LIP copying, malformed and cue WAV handling, repeat runs,
+  preserved originals, and cancellation.
+- Textures: DXT1/DXT3/DXT5/uncompressed DDS, rectangular aspect ratios, normal vector
+  renormalization, independent alpha filtering, mip levels through 1x1, preserved small
+  files, unsupported/corrupt files, repeated runs, and cancellation.
+- Security regression tests: CSV escaping, linked paths, atomic no-overwrite writes,
+  temporary cleanup, spoofed WAV, oversized texture dimensions and unsupported row pitch.
+- Windows launchers cross-compiled as x64 GUI PE executables, with asInvoker manifest,
+  ASLR and DEP flags. Bundled Python archive verified against python.org's published SHA-256.
+
+Remaining limits
+These are ordinary desktop tools running with your user account, not sandboxed decoders.
+They do not protect against a malicious same-user process changing the application files
+or racing filesystem checks. Use a local folder you control, not a writable shared folder.
+Very large valid files can still be slow and require substantial RAM or disk space.
+FFmpeg diagnostics are bounded (8 MiB stdout / 16 MiB stderr, checked while running).
+Normal-map type detection uses naming conventions; packed maps need manual handling.
+Cutout alpha coverage is not explicitly preserved; review foliage/fence mip appearance.
+Windows launch and in-game rendering/playback require user-side validation unless explicitly
+noted in TEST-RESULTS.txt. Executables are unsigned. No security tools/settings are disabled.
+
+Third-party supply chain
+The portable runtime is Python 3.13.16 from python.org, matching its official Windows
+index checksum. Texture dependencies are Pillow 12.3.0 and NumPy 2.3.5 wheels from PyPI.
+Their licenses remain included. Dependency source URLs and build hashes are supplied.
+FFmpeg is not redistributed here; the GUI downloads its provider build when requested.
